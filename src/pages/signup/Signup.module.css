@@ -1,0 +1,22 @@
+.container {
+  width: 30%;
+  margin: auto;
+  display: grid;
+  grid-template-rows: repeat(6, 1fr);
+  gap: 20px;
+}
+
+.container_1 {
+  display: grid;
+  place-items: center;
+}
+
+.input_controller {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  align-items: center;
+}
+
+.container_2 {
+  display: grid;
+}

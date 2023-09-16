@@ -9,6 +9,7 @@ import {
 } from "@ant-design/icons";
 import { resetSigninAndSignupData } from "@/store/auth/authSlice";
 import Link from "next/link";
+import { signin } from "@/store/auth/authActions";
 
 const Signin = () => {
   const dispatch = useDispatch();
@@ -31,7 +32,7 @@ const Signin = () => {
   };
 
   const handleSignup = () => {
-    dispatch(signup(userDetails));
+    dispatch(signin(userDetails));
   };
 
   useEffect(() => {

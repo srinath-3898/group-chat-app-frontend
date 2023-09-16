@@ -7,7 +7,8 @@
 }
 
 .container_1,
-.container_2 {
+.container_2,
+.container_3 {
   display: grid;
   place-items: center;
 }
@@ -20,4 +21,9 @@
 
 .container_2 button {
   width: 80%;
+}
+
+.container_3 a {
+  color: rgb(126, 126, 126);
+  text-decoration: underline;
 }

@@ -9,6 +9,7 @@ import {
 } from "@ant-design/icons";
 import { Spin, message } from "antd";
 import { resetSigninAndSignupData } from "@/store/auth/authSlice";
+import Link from "next/link";
 
 const Signup = () => {
   const dispatch = useDispatch();
@@ -117,6 +118,15 @@ const Signup = () => {
               "Signup"
             )}
           </button>
+        </div>
+        <div className={styles.container_3}>
+          <p className="text-small">
+            Already have an account? Please{" "}
+            <span>
+              <Link href={"/signin"}>Singin</Link>
+            </span>{" "}
+            to continue
+          </p>
         </div>
       </div>
     </>

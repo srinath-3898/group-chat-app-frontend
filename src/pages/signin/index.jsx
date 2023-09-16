@@ -8,6 +8,7 @@ import {
   LoadingOutlined,
 } from "@ant-design/icons";
 import { resetSigninAndSignupData } from "@/store/auth/authSlice";
+import Link from "next/link";
 
 const Signin = () => {
   const dispatch = useDispatch();
@@ -86,6 +87,15 @@ const Signin = () => {
               "Signup"
             )}
           </button>
+        </div>
+        <div className={styles.container_3}>
+          <p className="text-small">
+            {`Don't`} have an account? Please{" "}
+            <span>
+              <Link href={"/signup"}>Singup</Link>
+            </span>{" "}
+            here
+          </p>
         </div>
       </div>
     </>

@@ -2,23 +2,17 @@ import React, { useEffect, useState } from "react";
 import styles from "./Signin.module.css";
 import { useDispatch, useSelector } from "react-redux";
 import { Spin, message } from "antd";
-import {
-  CheckCircleFilled,
-  CloseCircleFilled,
-  LoadingOutlined,
-} from "@ant-design/icons";
+import { CloseCircleFilled, LoadingOutlined } from "@ant-design/icons";
 import { resetSigninAndSignupData } from "@/store/auth/authSlice";
 import Link from "next/link";
 import { signin } from "@/store/auth/authActions";
+import { useRouter } from "next/router";
 
 const Signin = () => {
   const dispatch = useDispatch();
+  const router = useRouter();
 
-  const {
-    loading,
-    message: authMessage,
-    error,
-  } = useSelector((state) => state.auth);
+  const { loading, error } = useSelector((state) => state.auth);
 
   const [userDetails, setUserDetails] = useState({
     email: "",
@@ -32,22 +26,24 @@ const Signin = () => {
   };
 
   const handleSignup = () => {
-    dispatch(signin(userDetails));
+    dispatch(signin(userDetails)).then((response) => {
+      console.log(response);
+      if (response?.payload?.data?.status) {
+        router.push("/");
+      }
+    });
   };
 
   useEffect(() => {
-    if (authMessage || error) {
+    if (error) {
       messageApi.open({
-        content: authMessage ? authMessage : error,
-        icon: authMessage ? (
-          <CheckCircleFilled style={{ color: "#00a300" }} />
-        ) : (
-          <CloseCircleFilled style={{ color: "red" }} />
-        ),
+        key: "updatable",
+        content: error,
+        icon: <CloseCircleFilled style={{ color: "red" }} />,
       });
     }
     dispatch(resetSigninAndSignupData());
-  }, [authMessage, error]);
+  }, [error]);
 
   return (
     <>
@@ -68,7 +64,7 @@ const Signin = () => {
         <div className={styles.input_controller}>
           <p className="text-small">Password :</p>
           <input
-            type="text"
+            type="password"
             placeholder="Please enter your password"
             name="password"
             onChange={handleInputChange}
@@ -85,7 +81,7 @@ const Signin = () => {
                 }
               />
             ) : (
-              "Signup"
+              "Signin"
             )}
           </button>
         </div>

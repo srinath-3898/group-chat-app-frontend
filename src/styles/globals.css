@@ -65,6 +65,10 @@ textarea {
   border-radius: 5px;
 }
 
+input:focus-visible {
+  outline: none;
+}
+
 input:disabled,
 textarea:disabled {
   cursor: not-allowed;

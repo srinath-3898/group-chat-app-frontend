@@ -1,14 +1,14 @@
 import api from "@/configs/apiConfig";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 
-export const sendMessage = createAsyncThunk(
-  "message/sendMessage",
-  async (message, { rejectWithValue }) => {
+export const getAllMessages = createAsyncThunk(
+  "messages/getAllMessages",
+  async (params, { rejectWithValue }) => {
     try {
       api.defaults.headers.common[
         "Authorization"
       ] = `Bearer ${localStorage.getItem("token")}`;
-      const response = await api.post("/message/send-message", message);
+      const response = await api.get("/message/all-messages");
       return response;
     } catch (error) {
       if (!error.response) {

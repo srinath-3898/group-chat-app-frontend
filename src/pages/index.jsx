@@ -15,13 +15,20 @@ import ProfileDrawer from "@/components/drawers/ProfileDrawer";
 import { setUserDetails } from "@/store/user/userSlice";
 import { setToken } from "@/store/auth/authSlice";
 import { sendMessage } from "@/store/message/messageActions";
+import { getAllMessages } from "@/store/messages/messagesActions";
 
 export default function Home() {
   const router = useRouter();
   const dispatch = useDispatch();
 
   const { loading, users, error } = useSelector((state) => state.user);
-  const { loading: mesageLoading, error: messageError } = useSelector(
+  const {
+    loading: messagesLoading,
+    messages,
+    error: messagesError,
+  } = useSelector((state) => state.messages);
+  console.log(messages);
+  const { loading: messageLoading, error: messageError } = useSelector(
     (state) => state.message
   );
 
@@ -64,7 +71,11 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    dispatch(getUsers());
+    dispatch(getUsers()).then((response) => {
+      if (response?.payload?.data?.status) {
+        dispatch(getAllMessages());
+      }
+    });
   }, []);
 
   return (
@@ -124,14 +135,24 @@ export default function Home() {
               onChange={(event) => setMessage({ text: event.target.value })}
             />
             <div className={styles.send_button}>
-              <SendOutlined
-                style={{
-                  fontSize: "20px",
-                  color: "#54656f",
-                  borderRadius: "50%",
-                }}
-                onClick={handleSendMessage}
-              />
+              {messageLoading ? (
+                <Spin
+                  indicator={
+                    <LoadingOutlined
+                      style={{ color: "#54656f", fontSize: "16px" }}
+                    />
+                  }
+                />
+              ) : (
+                <SendOutlined
+                  style={{
+                    fontSize: "20px",
+                    color: "#54656f",
+                    borderRadius: "50%",
+                  }}
+                  onClick={handleSendMessage}
+                />
+              )}
             </div>
           </div>
         </div>

@@ -1,26 +1,26 @@
-import { sendMessage } from "./messageActions";
+import { getAllMessages } from "./messagesActions";
 
 const { createSlice } = require("@reduxjs/toolkit");
 
-const messageSlice = createSlice({
-  name: "message",
+const messagesSlice = createSlice({
+  name: "messages",
   initialState: {
     loading: false,
-    message: null,
+    messages: null,
     error: null,
   },
   reducers: {},
   extraReducers: (builder) => {
     //get user details
     builder
-      .addCase(sendMessage.pending, (state) => {
+      .addCase(getAllMessages.pending, (state) => {
         state.loading = true;
       })
-      .addCase(sendMessage.fulfilled, (state, { payload }) => {
+      .addCase(getAllMessages.fulfilled, (state, { payload }) => {
         state.loading = false;
-        state.message = payload?.data?.message;
+        state.messages = payload?.data?.data?.messages;
       })
-      .addCase(sendMessage.rejected, (state, error) => {
+      .addCase(getAllMessages.rejected, (state, error) => {
         state.loading = false;
         if (error?.payload) {
           state.error = error?.payload?.data?.message;
@@ -31,6 +31,6 @@ const messageSlice = createSlice({
   },
 });
 
-export default messageSlice.reducer;
+export default messagesSlice.reducer;
 
-export const {} = messageSlice.actions;
+export const {} = messagesSlice.actions;

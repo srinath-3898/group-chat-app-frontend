@@ -7,12 +7,13 @@ import {
   MoreOutlined,
   LogoutOutlined,
   LoadingOutlined,
+  CloseCircleFilled,
 } from "@ant-design/icons";
-import { Dropdown, Spin, Tooltip } from "antd";
+import { Dropdown, Spin, Tooltip, message } from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import { getUserDetails, getUsers } from "@/store/user/userActions";
 import ProfileDrawer from "@/components/drawers/ProfileDrawer";
-import { setUserDetails } from "@/store/user/userSlice";
+import { resetUserData, setUserDetails } from "@/store/user/userSlice";
 import { setToken } from "@/store/auth/authSlice";
 import { sendMessage } from "@/store/message/messageActions";
 import { getAllMessages } from "@/store/messages/messagesActions";
@@ -21,19 +22,24 @@ export default function Home() {
   const router = useRouter();
   const dispatch = useDispatch();
 
-  const { loading, users, error } = useSelector((state) => state.user);
+  const { userDetails } = useSelector((state) => state.user);
+  const {
+    loading,
+    users,
+    error: usersError,
+  } = useSelector((state) => state.user);
   const {
     loading: messagesLoading,
     messages,
     error: messagesError,
   } = useSelector((state) => state.messages);
-  console.log(messages);
   const { loading: messageLoading, error: messageError } = useSelector(
     (state) => state.message
   );
 
   const [open, setOpen] = useState(false);
-  const [message, setMessage] = useState({ text: "" });
+  const [userMessage, setUserMessage] = useState({ text: "" });
+  const [messageApi, contextHolder] = message.useMessage();
 
   const items = [
     {
@@ -48,7 +54,10 @@ export default function Home() {
   ];
 
   const handleSendMessage = () => {
-    dispatch(sendMessage(message));
+    dispatch(sendMessage(userMessage)).then(() => {
+      setUserMessage({ text: "" });
+      dispatch(getAllMessages());
+    });
   };
 
   useEffect(() => {
@@ -71,21 +80,34 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    dispatch(getUsers()).then((response) => {
-      if (response?.payload?.data?.status) {
-        dispatch(getAllMessages());
-      }
-    });
+    setInterval(() => {
+      dispatch(getUsers()).then((response) => {
+        if (response?.payload?.data?.status) {
+          dispatch(getAllMessages());
+        }
+      });
+    }, 10000);
   }, []);
+
+  useEffect(() => {
+    if (messageError) {
+      messageApi.open({
+        content: messageError,
+        icon: <CloseCircleFilled style={{ color: "red" }} />,
+      });
+    }
+    dispatch(resetUserData());
+  }, [messageError]);
 
   return (
     <>
+      {contextHolder}
       <div className={styles.container}>
         <div className={styles.container_1}>
           <div className={styles.container_1_box_1}>
             <Tooltip title="Profile">
               <UserOutlined
-                style={{ fontSize: "30px", color: "whitesmoke" }}
+                style={{ fontSize: "30px", color: "#000000" }}
                 onClick={() => setOpen(true)}
               />
             </Tooltip>
@@ -94,10 +116,10 @@ export default function Home() {
               placement="bottomRight"
               trigger={["click"]}
             >
-              <MoreOutlined style={{ fontSize: "30px", color: "whitesmoke" }} />
+              <MoreOutlined style={{ fontSize: "30px", color: "#000000" }} />
             </Dropdown>
           </div>
-          {loading && !users && !error ? (
+          {loading && !users && !usersError ? (
             <Spin
               indicator={
                 <LoadingOutlined
@@ -108,12 +130,22 @@ export default function Home() {
           ) : (
             <></>
           )}
-          {!loading && users && users?.length && !error > 0 ? (
+          {!loading && !users && usersError ? (
+            <div>
+              <p>{usersError}</p>
+            </div>
+          ) : (
+            <></>
+          )}
+          {!loading && users && users?.length > 0 && !usersError > 0 ? (
             <div className={styles.container_1_box_2}>
               {users?.map((user) => (
                 <div key={user?.id} className={styles.user}>
                   <p className="text-small">{user?.fullName}</p>
-                  <p className="text-extra-small">
+                  <p
+                    className="text-extra-small bold"
+                    style={{ color: user?.loginStatus ? "#008069" : "grey" }}
+                  >
                     {user?.loginStatus ? "Online" : "Offline"}
                   </p>
                 </div>
@@ -125,14 +157,68 @@ export default function Home() {
         </div>
         <div className={styles.container_2}>
           <div className={styles.container_2_box_1}></div>
-          <div className={styles.container_2_box_2}></div>
+          <div className={styles.container_2_box_2}>
+            {messageLoading && !messages && !messagesError ? (
+              <Spin
+                indicator={
+                  <LoadingOutlined
+                    style={{ color: "#008069", fontSize: "16px" }}
+                  />
+                }
+              />
+            ) : (
+              <></>
+            )}
+            {!messagesLoading && !messages && messagesError ? (
+              <div>
+                <p>{messagesError}</p>
+              </div>
+            ) : (
+              <></>
+            )}
+            {!messagesLoading &&
+            messages &&
+            messages?.length > 0 &&
+            !messagesError ? (
+              messages?.map((message) => (
+                <div
+                  key={message?.id}
+                  className={`${styles.message}  ${
+                    userDetails?.id === message?.userId
+                      ? styles.message_right
+                      : ""
+                  }`}
+                >
+                  <div className={styles.message_content}>
+                    <div className={styles.message_content_header}>
+                      {userDetails?.id !== message?.userId ? (
+                        <p className="text-extra-small bold">
+                          {message?.senderName}
+                        </p>
+                      ) : (
+                        <p className="text-extra-small bold">You</p>
+                      )}
+                      <p className="text-extra-small">
+                        {new Date(message?.createdAt).toLocaleTimeString()}
+                      </p>
+                    </div>
+                    <div className={styles.message_content_body}>
+                      <p className="text-small ">{message?.text}</p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <></>
+            )}
+          </div>
           <div className={styles.container_2_box_3}>
             <input
               className={styles.message_input}
               type="text"
               placeholder="Type your message..."
-              value={message.text}
-              onChange={(event) => setMessage({ text: event.target.value })}
+              value={userMessage.text}
+              onChange={(event) => setUserMessage({ text: event.target.value })}
             />
             <div className={styles.send_button}>
               {messageLoading ? (

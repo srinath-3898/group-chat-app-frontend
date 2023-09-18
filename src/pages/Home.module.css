@@ -12,11 +12,12 @@
     "header"
     "chats";
   grid-template-rows: 69.5px 10fr;
+  border-right: 1px solid rgb(215, 215, 215);
 }
 
 .container_1_box_1 {
   grid-area: header;
-  background-color: #008069;
+  background-color: #f0f2f5;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -43,13 +44,57 @@
 }
 
 .container_2_box_1 {
-  background-color: #008069;
+  background-color: #f0f2f5;
   padding: 15px;
 }
 
 .container_2_box_2 {
   background-color: #eae6df;
   overflow-y: auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 10px;
+}
+
+.message {
+  width: 100%;
+  display: flex;
+}
+
+.message_right {
+  justify-content: flex-end;
+}
+
+.message_content {
+  width: 40%;
+  min-height: 50px;
+  padding: 10px;
+  background-color: white;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.message_content_header {
+  display: flex;
+  justify-content: space-between;
+}
+
+.message_content_body {
+  display: block;
+}
+
+.message_content_body p {
+  white-space: normal;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+.message_right > .message_content {
+  background-color: #d9fdd3;
 }
 
 .container_2_box_3 {

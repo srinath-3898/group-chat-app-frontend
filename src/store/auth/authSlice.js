@@ -6,21 +6,17 @@ const authSlice = createSlice({
   initialState: {
     loading: false,
     token: null,
-    userDetails: null,
     message: null,
     error: null,
   },
   reducers: {
-    resetSigninAndSignupData: (state) => {
+    resetAuthData: (state) => {
       state.loading = false;
       state.message = null;
       state.error = null;
     },
     setToken: (state, { payload }) => {
       state.token = payload;
-    },
-    setUser: (state, { payload }) => {
-      state.user = payload;
     },
   },
   extraReducers: (builder) => {
@@ -65,5 +61,4 @@ const authSlice = createSlice({
 
 export default authSlice.reducer;
 
-export const { resetSigninAndSignupData, setToken, setUser } =
-  authSlice.actions;
+export const { resetAuthData, setToken } = authSlice.actions;

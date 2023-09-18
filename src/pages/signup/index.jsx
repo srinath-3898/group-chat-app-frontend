@@ -8,7 +8,7 @@ import {
   LoadingOutlined,
 } from "@ant-design/icons";
 import { Spin, message } from "antd";
-import { resetSigninAndSignupData } from "@/store/auth/authSlice";
+import { resetAuthData } from "@/store/auth/authSlice";
 import Link from "next/link";
 
 const Signup = () => {
@@ -25,7 +25,7 @@ const Signup = () => {
     email: "",
     mobile: "",
     password: "",
-    confirm_password: "",
+    confirmPassword: "",
   });
   const [messageApi, contextHolder] = message.useMessage();
 
@@ -43,13 +43,13 @@ const Signup = () => {
       messageApi.open({
         content: authMessage ? authMessage : error,
         icon: authMessage ? (
-          <CheckCircleFilled style={{ color: "#00a300" }} />
+          <CheckCircleFilled style={{ color: "#008069" }} />
         ) : (
           <CloseCircleFilled style={{ color: "red" }} />
         ),
       });
     }
-    dispatch(resetSigninAndSignupData());
+    dispatch(resetAuthData());
   }, [authMessage, error]);
 
   return (
@@ -100,7 +100,7 @@ const Signup = () => {
           <input
             type="password"
             placeholder="Please confirm your passwod"
-            name="confirm_password"
+            name="confirmPassword"
             onChange={handleInputChange}
           />
         </div>

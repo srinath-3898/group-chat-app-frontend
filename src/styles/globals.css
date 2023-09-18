@@ -78,7 +78,7 @@ button {
   padding: 10px;
   border: none;
   border-radius: 5px;
-  background-color: green;
+  background-color: #008069;
   color: #ffffff;
 }
 
@@ -89,4 +89,16 @@ button:hover {
 button:disabled {
   background-color: #cccccc;
   cursor: not-allowed;
+}
+
+.ant-drawer-header {
+  background-color: #008069 !important;
+}
+
+.ant-drawer-title {
+  color: white !important;
+}
+
+.ant-drawer-body {
+  padding: 0px !important;
 }

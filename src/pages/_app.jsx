@@ -1,4 +1,4 @@
-import { store, wrapper } from "@/store/stores";
+import { store, wrapper } from "@/store/store";
 import "@/styles/globals.css";
 import { Provider } from "react-redux";
 import styles from "./App.module.css";

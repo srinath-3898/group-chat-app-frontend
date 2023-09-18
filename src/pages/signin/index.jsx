@@ -3,7 +3,7 @@ import styles from "./Signin.module.css";
 import { useDispatch, useSelector } from "react-redux";
 import { Spin, message } from "antd";
 import { CloseCircleFilled, LoadingOutlined } from "@ant-design/icons";
-import { resetSigninAndSignupData } from "@/store/auth/authSlice";
+import { resetAuthData } from "@/store/auth/authSlice";
 import Link from "next/link";
 import { signin } from "@/store/auth/authActions";
 import { useRouter } from "next/router";
@@ -25,9 +25,8 @@ const Signin = () => {
     setUserDetails((prevState) => ({ ...prevState, [name]: value }));
   };
 
-  const handleSignup = () => {
+  const handleSignin = () => {
     dispatch(signin(userDetails)).then((response) => {
-      console.log(response);
       if (response?.payload?.data?.status) {
         router.push("/");
       }
@@ -42,7 +41,7 @@ const Signin = () => {
         icon: <CloseCircleFilled style={{ color: "red" }} />,
       });
     }
-    dispatch(resetSigninAndSignupData());
+    dispatch(resetAuthData());
   }, [error]);
 
   return (
@@ -71,7 +70,7 @@ const Signin = () => {
           />
         </div>
         <div className={styles.container_2}>
-          <button onClick={handleSignup} disabled={loading}>
+          <button onClick={handleSignin} disabled={loading}>
             {loading ? (
               <Spin
                 indicator={

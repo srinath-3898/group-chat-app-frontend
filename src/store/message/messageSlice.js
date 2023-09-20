@@ -11,7 +11,7 @@ const messageSlice = createSlice({
   },
   reducers: {},
   extraReducers: (builder) => {
-    //get user details
+    //send message
     builder
       .addCase(sendMessage.pending, (state) => {
         state.loading = true;

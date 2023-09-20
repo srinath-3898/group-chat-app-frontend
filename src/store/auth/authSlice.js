@@ -1,5 +1,5 @@
 const { createSlice } = require("@reduxjs/toolkit");
-import { signin, signup } from "./authActions";
+import { signin, signout, signup } from "./authActions";
 
 const authSlice = createSlice({
   name: "auth",
@@ -49,6 +49,24 @@ const authSlice = createSlice({
         state.message = payload?.data?.message;
       })
       .addCase(signin.rejected, (state, error) => {
+        state.loading = false;
+        if (error?.payload) {
+          state.error = error?.payload?.data?.message;
+        } else {
+          state.error = error?.error?.message;
+        }
+      });
+
+    //user signout
+    builder
+      .addCase(signout.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(signout.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        state.message = payload?.data?.message;
+      })
+      .addCase(signout.rejected, (state, error) => {
         state.loading = false;
         if (error?.payload) {
           state.error = error?.payload?.data?.message;

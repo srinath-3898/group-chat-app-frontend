@@ -31,3 +31,17 @@ export const signin = createAsyncThunk(
     }
   }
 );
+export const signout = createAsyncThunk(
+  "auth/signout",
+  async (params, { rejectWithValue }) => {
+    try {
+      const response = await api.get("/auth/signout");
+      return response;
+    } catch (error) {
+      if (!error.response) {
+        throw error;
+      }
+      return rejectWithValue(error.response);
+    }
+  }
+);

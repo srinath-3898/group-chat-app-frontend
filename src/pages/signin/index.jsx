@@ -2,7 +2,11 @@ import React, { useEffect, useState } from "react";
 import styles from "./Signin.module.css";
 import { useDispatch, useSelector } from "react-redux";
 import { Spin, message } from "antd";
-import { CloseCircleFilled, LoadingOutlined } from "@ant-design/icons";
+import {
+  CloseCircleFilled,
+  LoadingOutlined,
+  CheckCircleFilled,
+} from "@ant-design/icons";
 import { resetAuthData } from "@/store/auth/authSlice";
 import Link from "next/link";
 import { signin } from "@/store/auth/authActions";
@@ -12,7 +16,11 @@ const Signin = () => {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const { loading, error } = useSelector((state) => state.auth);
+  const {
+    loading,
+    message: authMessage,
+    error,
+  } = useSelector((state) => state.auth);
 
   const [userDetails, setUserDetails] = useState({
     email: "",
@@ -34,11 +42,15 @@ const Signin = () => {
   };
 
   useEffect(() => {
-    if (error) {
+    if (authMessage || error) {
       messageApi.open({
         key: "updatable",
-        content: error,
-        icon: <CloseCircleFilled style={{ color: "red" }} />,
+        content: authMessage ? authMessage : error,
+        icon: authMessage ? (
+          <CheckCircleFilled style={{ color: "#008069" }} />
+        ) : (
+          <CloseCircleFilled style={{ color: "red" }} />
+        ),
       });
     }
     dispatch(resetAuthData());

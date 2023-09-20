@@ -9,16 +9,22 @@ const messagesSlice = createSlice({
     messages: null,
     error: null,
   },
-  reducers: {},
+  reducers: {
+    resetMessagesData: (state) => {
+      state.loading = false;
+      state.messages = null;
+      state.error = null;
+    },
+  },
   extraReducers: (builder) => {
-    //get user details
+    //get all messages
     builder
       .addCase(getAllMessages.pending, (state) => {
         state.loading = true;
       })
       .addCase(getAllMessages.fulfilled, (state, { payload }) => {
         state.loading = false;
-        state.messages = payload?.data?.data?.messages;
+        state.messages = payload?.data?.data;
       })
       .addCase(getAllMessages.rejected, (state, error) => {
         state.loading = false;
@@ -33,4 +39,4 @@ const messagesSlice = createSlice({
 
 export default messagesSlice.reducer;
 
-export const {} = messagesSlice.actions;
+export const { resetMessagesData } = messagesSlice.actions;

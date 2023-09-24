@@ -57,7 +57,7 @@ const Signup = () => {
       {contextHolder}
       <div className={styles.container}>
         <div className={styles.container_1}>
-          <p className="title bold">Singup</p>
+          <p className="title bold">Sign up</p>
         </div>
         <div className={styles.input_controller}>
           <p className="text-small">Full Name :</p>

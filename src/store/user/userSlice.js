@@ -1,4 +1,4 @@
-import { editUserDetails, getUserDetails, getUsers } from "./userActions";
+import { editUserDetails, getUserDetails } from "./userActions";
 
 const { createSlice } = require("@reduxjs/toolkit");
 
@@ -7,7 +7,6 @@ const userSlice = createSlice({
   initialState: {
     loading: false,
     userDetails: null,
-    users: null,
     message: null,
     error: null,
   },
@@ -51,24 +50,6 @@ const userSlice = createSlice({
         state.message = payload?.data?.message;
       })
       .addCase(editUserDetails.rejected, (state, error) => {
-        state.loading = false;
-        if (error?.payload) {
-          state.error = error?.payload?.data?.message;
-        } else {
-          state.error = error?.error?.message;
-        }
-      });
-
-    //get users
-    builder
-      .addCase(getUsers.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(getUsers.fulfilled, (state, { payload }) => {
-        state.loading = false;
-        state.users = payload?.data?.data?.users;
-      })
-      .addCase(getUsers.rejected, (state, error) => {
         state.loading = false;
         if (error?.payload) {
           state.error = error?.payload?.data?.message;

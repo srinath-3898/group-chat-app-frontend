@@ -36,21 +36,3 @@ export const editUserDetails = createAsyncThunk(
     }
   }
 );
-
-export const getUsers = createAsyncThunk(
-  "user/getUsers",
-  async (params, { rejectWithValue }) => {
-    try {
-      api.defaults.headers.common[
-        "Authorization"
-      ] = `Bearer ${localStorage.getItem("token")}`;
-      const response = await api.get("/user/users");
-      return response;
-    } catch (error) {
-      if (!error.response) {
-        throw error;
-      }
-      return rejectWithValue(error.response);
-    }
-  }
-);

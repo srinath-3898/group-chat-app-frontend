@@ -29,6 +29,31 @@
   overflow-y: auto;
 }
 
+.chats {
+  display: flex;
+  flex-direction: column;
+}
+
+.chat {
+  height: 70px;
+  padding: 10px;
+  border-bottom: 1px solid rgb(239, 238, 238);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.chat:hover {
+  cursor: pointer;
+}
+
+.icon {
+  border: 1px solid grey;
+  border-radius: 50%;
+  height: 50px;
+  width: 50px;
+}
+
 .user {
   display: flex;
   align-items: center;
@@ -45,7 +70,13 @@
 
 .container_2_box_1 {
   background-color: #f0f2f5;
-  padding: 15px;
+  padding: 10px;
+}
+
+.selected_chat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .container_2_box_2 {
@@ -119,4 +150,17 @@
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.error {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.error p {
+  background-color: rgb(255, 212, 212);
+  padding: 10px;
+  border-radius: 5px;
 }

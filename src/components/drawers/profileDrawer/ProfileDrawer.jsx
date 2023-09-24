@@ -42,7 +42,12 @@ const ProfileDrawer = ({ open, setOpen }) => {
 
   const handleEdit = () => {
     setEdit({ fullName: false, email: false, mobile: false });
-    dispatch(editUserDetails(updatedUserDetails));
+    dispatch(editUserDetails(updatedUserDetails)).then((response) => {
+      localStorage.setItem(
+        "userDetails",
+        JSON.stringify(response?.payload?.data?.data?.userDetails)
+      );
+    });
   };
 
   useEffect(() => {

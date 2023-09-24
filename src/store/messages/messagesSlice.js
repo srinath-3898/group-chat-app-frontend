@@ -1,4 +1,4 @@
-import { getAllMessages } from "./messagesActions";
+import { getChatMessages } from "./messagesActions";
 
 const { createSlice } = require("@reduxjs/toolkit");
 
@@ -19,14 +19,14 @@ const messagesSlice = createSlice({
   extraReducers: (builder) => {
     //get all messages
     builder
-      .addCase(getAllMessages.pending, (state) => {
+      .addCase(getChatMessages.pending, (state) => {
         state.loading = true;
       })
-      .addCase(getAllMessages.fulfilled, (state, { payload }) => {
+      .addCase(getChatMessages.fulfilled, (state, { payload }) => {
         state.loading = false;
         state.messages = payload?.data?.data;
       })
-      .addCase(getAllMessages.rejected, (state, error) => {
+      .addCase(getChatMessages.rejected, (state, error) => {
         state.loading = false;
         if (error?.payload) {
           state.error = error?.payload?.data?.message;

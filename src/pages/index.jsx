@@ -8,27 +8,33 @@ import {
   LogoutOutlined,
   LoadingOutlined,
   CloseCircleFilled,
+  PlusCircleOutlined,
+  UsergroupAddOutlined,
 } from "@ant-design/icons";
-import { Dropdown, Spin, Tooltip, message } from "antd";
+import { Spin, Tooltip, message } from "antd";
 import { useDispatch, useSelector } from "react-redux";
-import { getUserDetails, getUsers } from "@/store/user/userActions";
-import ProfileDrawer from "@/components/drawers/ProfileDrawer";
+import { getUserDetails } from "@/store/user/userActions";
+import ProfileDrawer from "@/components/drawers/profileDrawer/ProfileDrawer";
 import { resetUserData, setUserDetails } from "@/store/user/userSlice";
 import { setToken } from "@/store/auth/authSlice";
 import { sendMessage } from "@/store/message/messageActions";
-import { getAllMessages } from "@/store/messages/messagesActions";
+import { getChatMessages } from "@/store/messages/messagesActions";
 import { signout } from "@/store/auth/authActions";
+import { getAllChats } from "@/store/chats/chatsActions";
+import MyDropdown from "@/components/myDropdown/MyDropdown";
+import CreateNewGroupDrawer from "@/components/drawers/createNewGroupDrawer/createNewGroupDrawer";
 
 export default function Home() {
   const router = useRouter();
   const dispatch = useDispatch();
 
+  const { loading, userDetails } = useSelector((state) => state.user);
+
   const {
-    loading,
-    userDetails,
-    users,
-    error: usersError,
-  } = useSelector((state) => state.user);
+    loading: chatsLoading,
+    chats,
+    error: chatsError,
+  } = useSelector((state) => state.chats);
 
   const {
     loading: messagesLoading,
@@ -40,14 +46,13 @@ export default function Home() {
     (state) => state.message
   );
 
-  const {
-    loading: authLoading,
-    message: authMessage,
-    error: authError,
-  } = useSelector((state) => state.auth);
+  const { error: authError } = useSelector((state) => state.auth);
 
-  const [open, setOpen] = useState(false);
-  const [userMessage, setUserMessage] = useState({ text: "message 22" });
+  const [profileDrawerOpen, setProfileDrawerOpen] = useState(false);
+  const [createNewGroupDrawerOpen, setCreateNewGroupDrawerOpen] =
+    useState(false);
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [userMessage, setUserMessage] = useState({ content: "" });
   const [allMessages, setAllMessages] = useState([]);
   const [pageNumber, setPageNumber] = useState(1);
   const [messageApi, contextHolder] = message.useMessage();
@@ -81,6 +86,21 @@ export default function Home() {
     });
   };
 
+  const chatItems = [
+    {
+      key: "1",
+      label: (
+        <div
+          className={styles.item}
+          onClick={() => setCreateNewGroupDrawerOpen(true)}
+        >
+          <p className="text-small">Create new group</p>
+          <UsergroupAddOutlined style={{ fontSize: "20px" }} />
+        </div>
+      ),
+    },
+  ];
+
   const items = [
     {
       key: "1",
@@ -93,11 +113,22 @@ export default function Home() {
     },
   ];
 
+  const handleChatClick = (chat) => {
+    setSelectedChat(chat);
+    dispatch(getChatMessages({ chatId: chat?.id, pageNumber: 1 }));
+    setPageNumber(1);
+  };
+
+  console.log(allMessages);
+
   const handleSendMessage = () => {
-    dispatch(sendMessage(userMessage)).then(() => {
-      setUserMessage({ text: "message 22" });
-      dispatch(getAllMessages(1));
-    });
+    dispatch(sendMessage({ chatId: selectedChat?.id, userMessage })).then(
+      () => {
+        setUserMessage({ content: "" });
+        dispatch(getChatMessages({ chatId: selectedChat?.id, pageNumber: 1 }));
+        setPageNumber(1);
+      }
+    );
   };
 
   useEffect(() => {
@@ -120,12 +151,14 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    dispatch(getUsers());
+    dispatch(getAllChats());
   }, []);
 
   useEffect(() => {
-    dispatch(getAllMessages(pageNumber));
-  }, [pageNumber]);
+    if (selectedChat && pageNumber > 1) {
+      dispatch(getChatMessages({ chatId: selectedChat?.id, pageNumber }));
+    }
+  }, [pageNumber, selectedChat]);
 
   useEffect(() => {
     if (messages && messages?.currentPage === 1) {
@@ -160,55 +193,65 @@ export default function Home() {
             <Tooltip title="Profile">
               <UserOutlined
                 style={{ fontSize: "30px", color: "#000000" }}
-                onClick={() => setOpen(true)}
+                onClick={() => setProfileDrawerOpen(true)}
               />
             </Tooltip>
-            <Dropdown
-              menu={{ items }}
-              placement="bottomRight"
-              trigger={["click"]}
-            >
-              <MoreOutlined style={{ fontSize: "30px", color: "#000000" }} />
-            </Dropdown>
-          </div>
-          {loading && !users && !usersError ? (
-            <Spin
-              indicator={
-                <LoadingOutlined
-                  style={{ color: "#008069", fontSize: "16px" }}
+            <MyDropdown
+              items={chatItems}
+              buttonItem={
+                <PlusCircleOutlined
+                  style={{ fontSize: "30px", color: "#000000" }}
                 />
               }
             />
-          ) : (
-            <></>
-          )}
-          {!loading && !users && usersError ? (
-            <div>
-              <p>{usersError}</p>
-            </div>
-          ) : (
-            <></>
-          )}
-          {!loading && users && users?.length > 0 && !usersError > 0 ? (
-            <div className={styles.container_1_box_2}>
-              {users?.map((user) => (
-                <div key={user?.id} className={styles.user}>
-                  <p className="text-small">{user?.fullName}</p>
-                  <p
-                    className="text-extra-small bold"
-                    style={{ color: user?.loginStatus ? "#008069" : "grey" }}
+            <MyDropdown
+              items={items}
+              buttonItem={
+                <MoreOutlined style={{ fontSize: "30px", color: "#000000" }} />
+              }
+            />
+          </div>
+          <div className={styles.container_1_box_2}>
+            {!chatsLoading && !chats && !chatsError ? (
+              <Spin
+                indicator={
+                  <LoadingOutlined
+                    style={{ color: "#008069", fontSize: "16px" }}
+                  />
+                }
+              />
+            ) : (
+              <></>
+            )}
+            {!chatsLoading && chats && chats?.length > 0 && !chatsError ? (
+              <div className={styles.chats}>
+                {chats?.map((chat) => (
+                  <div
+                    key={chat?.id}
+                    className={styles.chat}
+                    onClick={() => handleChatClick(chat)}
                   >
-                    {user?.loginStatus ? "Online" : "Offline"}
-                  </p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <></>
-          )}
+                    <div className={styles.icon}></div>
+                    <p className="text-small">{chat?.name}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <></>
+            )}
+          </div>
         </div>
         <div className={styles.container_2}>
-          <div className={styles.container_2_box_1}></div>
+          <div className={styles.container_2_box_1}>
+            {selectedChat ? (
+              <div className={styles.selected_chat}>
+                <div className={styles.icon}></div>
+                <p className="text-small">{selectedChat?.name}</p>
+              </div>
+            ) : (
+              <></>
+            )}
+          </div>
           <div className={styles.container_2_box_2} ref={myDivRef}>
             {messageLoading && !messages && !messagesError ? (
               <Spin
@@ -222,8 +265,8 @@ export default function Home() {
               <></>
             )}
             {!messagesLoading && !messages && messagesError ? (
-              <div>
-                <p>{messagesError}</p>
+              <div className={styles.error}>
+                <p className="text-small">{messagesError}</p>
               </div>
             ) : (
               <></>
@@ -235,7 +278,7 @@ export default function Home() {
                     <div
                       key={message?.id}
                       className={`${styles.message}  ${
-                        userDetails?.id === message?.userId
+                        userDetails?.id === message?.senderId
                           ? styles.message_right
                           : ""
                       }`}
@@ -255,7 +298,7 @@ export default function Home() {
                           </p>
                         </div>
                         <div className={styles.message_content_body}>
-                          <p className="text-small ">{message?.text}</p>
+                          <p className="text-small ">{message?.content}</p>
                         </div>
                       </div>
                     </div>
@@ -265,7 +308,7 @@ export default function Home() {
                     <div
                       key={message?.id}
                       className={`${styles.message}  ${
-                        userDetails?.id === message?.userId
+                        userDetails?.id === message?.senderId
                           ? styles.message_right
                           : ""
                       }`}
@@ -284,7 +327,7 @@ export default function Home() {
                           </p>
                         </div>
                         <div className={styles.message_content_body}>
-                          <p className="text-small ">{message?.text}</p>
+                          <p className="text-small ">{message?.content}</p>
                         </div>
                       </div>
                     </div>
@@ -300,8 +343,10 @@ export default function Home() {
               className={styles.message_input}
               type="text"
               placeholder="Type your message..."
-              value={userMessage.text}
-              onChange={(event) => setUserMessage({ text: event.target.value })}
+              value={userMessage.content}
+              onChange={(event) =>
+                setUserMessage({ content: event.target.value })
+              }
             />
             <div className={styles.send_button}>
               {messageLoading ? (
@@ -326,7 +371,11 @@ export default function Home() {
           </div>
         </div>
       </div>
-      <ProfileDrawer open={open} setOpen={setOpen} />
+      <ProfileDrawer open={profileDrawerOpen} setOpen={setProfileDrawerOpen} />
+      <CreateNewGroupDrawer
+        open={createNewGroupDrawerOpen}
+        setOpen={setCreateNewGroupDrawerOpen}
+      />
     </>
   );
 }

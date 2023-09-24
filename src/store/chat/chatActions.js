@@ -1,16 +1,14 @@
 import api from "@/configs/apiConfig";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 
-export const getChatMessages = createAsyncThunk(
-  "messages/getChatMessages",
-  async ({ chatId, pageNumber }, { rejectWithValue }) => {
+export const createGroup = createAsyncThunk(
+  "chat/createGroup",
+  async (group, { rejectWithValue }) => {
     try {
       api.defaults.headers.common[
         "Authorization"
       ] = `Bearer ${localStorage.getItem("token")}`;
-      const response = await api.get(
-        `/message/chat-messages/${chatId}?page=${pageNumber}`
-      );
+      const response = await api.post("/chat/create-group", group);
       return response;
     } catch (error) {
       if (!error.response) {

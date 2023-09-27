@@ -29,12 +29,14 @@
   overflow-y: auto;
 }
 
-.chats {
+.chats,
+.invitations {
   display: flex;
   flex-direction: column;
 }
 
-.chat {
+.chat,
+.invitation {
   height: 70px;
   padding: 10px;
   border-bottom: 1px solid rgb(239, 238, 238);
@@ -43,7 +45,8 @@
   gap: 10px;
 }
 
-.chat:hover {
+.chat:hover,
+.invitation:hover {
   cursor: pointer;
 }
 
@@ -71,12 +74,21 @@
 .container_2_box_1 {
   background-color: #f0f2f5;
   padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.selected_chat {
+.selected_chat,
+.selected_invitation {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.selected_chat:hover,
+.selected_invitation:hover {
+  cursor: pointer;
 }
 
 .container_2_box_2 {
@@ -87,6 +99,16 @@
   flex-direction: column;
   gap: 20px;
   padding: 10px;
+}
+
+.container_2_box_2_res {
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.invitation_buttons {
+  display: flex;
+  gap: 20px;
 }
 
 .message {

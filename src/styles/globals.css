@@ -91,6 +91,11 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.btn_secondary {
+  background-color: gray;
+  color: white;
+}
+
 .ant-drawer-header {
   background-color: #008069 !important;
 }

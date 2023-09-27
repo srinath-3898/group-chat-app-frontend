@@ -1,0 +1,35 @@
+.container {
+  padding: 20px;
+  display: grid;
+  gap: 20px;
+}
+
+.container_1 {
+  display: flex;
+  gap: 20px;
+}
+
+.add_users,
+.users {
+  display: grid;
+  gap: 5px;
+}
+
+.user {
+  padding: 5px;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+}
+
+.user:hover {
+  cursor: pointer;
+}
+
+.selected_user {
+  background-color: #008069;
+  border-radius: 5px;
+}
+
+.selected_user p {
+  color: white;
+}

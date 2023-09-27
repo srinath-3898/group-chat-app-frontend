@@ -11,7 +11,7 @@ const chatsSlice = createSlice({
   },
   reducers: {},
   extraReducers: (builder) => {
-    //create group
+    //get user chats
     builder
       .addCase(getAllChats.pending, (state) => {
         state.loading = true;

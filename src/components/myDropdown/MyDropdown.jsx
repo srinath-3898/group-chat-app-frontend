@@ -8,7 +8,6 @@ const MyDropdown = ({ items, buttonItem, placement }) => {
           items,
         }}
         placement={placement ? placement : "bottomRight"}
-        arrow
         trigger={["click"]}
       >
         {buttonItem}

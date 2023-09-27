@@ -8,7 +8,7 @@ export const getAllUsers = createAsyncThunk(
       api.defaults.headers.common[
         "Authorization"
       ] = `Bearer ${localStorage.getItem("token")}`;
-      const response = await api.get(`/user/users?page=${page}`);
+      const response = await api.get(`/chat/all-users?page=${page}`);
       return response;
     } catch (error) {
       if (!error.response) {

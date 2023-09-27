@@ -1,0 +1,40 @@
+.container {
+  padding: 20px;
+  display: grid;
+  gap: 20px;
+}
+
+.container_1 {
+  display: flex;
+  gap: 20px;
+}
+
+.add_users,
+.users {
+  display: grid;
+  gap: 5px;
+}
+
+.user {
+  padding: 5px;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  align-items: center;
+}
+
+.user:hover {
+  cursor: pointer;
+}
+
+.admin {
+  padding: 3px;
+  background-color: #c5e6c1;
+  border-radius: 5px;
+  display: flex;
+  justify-content: center;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+}

@@ -10,6 +10,8 @@ import {
   CloseCircleFilled,
   PlusCircleOutlined,
   UsergroupAddOutlined,
+  CheckCircleFilled,
+  UserAddOutlined,
 } from "@ant-design/icons";
 import { Spin, Tooltip, message } from "antd";
 import { useDispatch, useSelector } from "react-redux";
@@ -23,12 +25,34 @@ import { signout } from "@/store/auth/authActions";
 import { getAllChats } from "@/store/chats/chatsActions";
 import MyDropdown from "@/components/myDropdown/MyDropdown";
 import CreateNewGroupDrawer from "@/components/drawers/createNewGroupDrawer/createNewGroupDrawer";
+import { getInvitations } from "@/store/invitations/invitationsActions";
+import { updateInvitation } from "@/store/invitation/invitationActions";
+import { resetInvitationData } from "@/store/invitation/invitationSlice";
+import { resetMessageData } from "@/store/message/messageSlice";
+import AddUsersDrawer from "@/components/drawers/addUserDrawer/AddUsersDrawer";
+import GroupChatDrawer from "@/components/drawers/groupChatDrawer/GroupChatDrawer";
 
 export default function Home() {
   const router = useRouter();
   const dispatch = useDispatch();
 
-  const { loading, userDetails } = useSelector((state) => state.user);
+  const {
+    loading,
+    userDetails,
+    message: authMessage,
+  } = useSelector((state) => state.user);
+
+  const {
+    loading: invitationsLoading,
+    invitations,
+    error: invitationsError,
+  } = useSelector((state) => state.invitations);
+
+  const {
+    loading: invitationLoading,
+    message: invitationMessage,
+    error: invitationError,
+  } = useSelector((state) => state.invitations);
 
   const {
     loading: chatsLoading,
@@ -51,7 +75,10 @@ export default function Home() {
   const [profileDrawerOpen, setProfileDrawerOpen] = useState(false);
   const [createNewGroupDrawerOpen, setCreateNewGroupDrawerOpen] =
     useState(false);
+  const [addUserDrawerOpen, setAddUserDrawerOpen] = useState(false);
+  const [groupChatDrawerOpen, setGroupChatDrawerOpen] = useState(false);
   const [selectedChat, setSelectedChat] = useState(null);
+  const [selectedInvitation, setSelectedInvitation] = useState(null);
   const [userMessage, setUserMessage] = useState({ content: "" });
   const [allMessages, setAllMessages] = useState([]);
   const [pageNumber, setPageNumber] = useState(1);
@@ -59,6 +86,7 @@ export default function Home() {
 
   const myDivRef = useRef(null);
   const observer = useRef(null);
+
   const firstMessageElementRef = useCallback(
     (node) => {
       if (loading) return;
@@ -78,7 +106,6 @@ export default function Home() {
 
   const handleLogout = () => {
     dispatch(signout()).then((response) => {
-      console.log(response);
       if (response?.payload?.data?.status) {
         localStorage.clear();
         router.push("/signin");
@@ -86,7 +113,7 @@ export default function Home() {
     });
   };
 
-  const chatItems = [
+  const createItems = [
     {
       key: "1",
       label: (
@@ -113,20 +140,55 @@ export default function Home() {
     },
   ];
 
-  const handleChatClick = (chat) => {
-    setSelectedChat(chat);
-    dispatch(getChatMessages({ chatId: chat?.id, pageNumber: 1 }));
-    setPageNumber(1);
+  const chatItems = [
+    {
+      key: "1",
+      label: (
+        <div className={styles.item} onClick={() => setAddUserDrawerOpen(true)}>
+          <p className="text-small">Add user </p>
+          <UserAddOutlined style={{ fontSize: "20px", color: "#000000" }} />
+        </div>
+      ),
+    },
+  ];
+
+  const handleInvitationClick = (invitation) => {
+    setSelectedChat(null);
+    setSelectedInvitation(invitation);
   };
 
-  console.log(allMessages);
+  const handleInvitaionButtonClick = (status) => {
+    dispatch(
+      updateInvitation({
+        status,
+        invitationId: selectedInvitation?.id,
+      })
+    ).then((response) => {
+      dispatch(resetInvitationData());
+      if (response?.payload?.data?.status) {
+        setSelectedInvitation(null);
+        dispatch(getInvitations()).then((response) => {
+          if (response?.payload?.data?.status) {
+            dispatch(getAllChats());
+          }
+        });
+      }
+    });
+  };
+
+  const handleChatClick = (chat) => {
+    setSelectedInvitation(null);
+    setSelectedChat(chat);
+    setPageNumber(1);
+    dispatch(getChatMessages({ chatId: chat?.id, pageNumber: 1 }));
+  };
 
   const handleSendMessage = () => {
     dispatch(sendMessage({ chatId: selectedChat?.id, userMessage })).then(
       () => {
         setUserMessage({ content: "" });
-        dispatch(getChatMessages({ chatId: selectedChat?.id, pageNumber: 1 }));
         setPageNumber(1);
+        dispatch(getChatMessages({ chatId: selectedChat?.id, pageNumber: 1 }));
       }
     );
   };
@@ -148,6 +210,10 @@ export default function Home() {
       dispatch(setToken(localStorage.getItem("token")));
       dispatch(setUserDetails(JSON.parse(localStorage.getItem("userDetails"))));
     }
+  }, []);
+
+  useEffect(() => {
+    dispatch(getInvitations());
   }, []);
 
   useEffect(() => {
@@ -175,13 +241,33 @@ export default function Home() {
   }, [allMessages]);
 
   useEffect(() => {
-    if (messageError || authError) {
+    if (
+      authMessage ||
+      messageError ||
+      authError ||
+      invitationMessage ||
+      invitationError
+    ) {
       messageApi.open({
-        content: messageError ? messageError : authError,
-        icon: <CloseCircleFilled style={{ color: "red" }} />,
+        content: messageError
+          ? messageError
+          : authError
+          ? authError
+          : invitationMessage
+          ? invitationMessage
+          : invitationError
+          ? invitationError
+          : authMessage,
+        icon: invitationMessage ? (
+          <CheckCircleFilled style={{ color: "#008069" }} />
+        ) : (
+          <CloseCircleFilled style={{ color: "red" }} />
+        ),
       });
+      dispatch(resetMessageData());
+      dispatch(resetInvitationData());
+      dispatch(resetUserData());
     }
-    dispatch(resetUserData());
   }, [messageError]);
 
   return (
@@ -192,27 +278,65 @@ export default function Home() {
           <div className={styles.container_1_box_1}>
             <Tooltip title="Profile">
               <UserOutlined
-                style={{ fontSize: "30px", color: "#000000" }}
+                style={{ fontSize: "20px", color: "#000000" }}
                 onClick={() => setProfileDrawerOpen(true)}
               />
             </Tooltip>
             <MyDropdown
-              items={chatItems}
+              items={createItems}
               buttonItem={
                 <PlusCircleOutlined
-                  style={{ fontSize: "30px", color: "#000000" }}
+                  style={{ fontSize: "20px", color: "#000000" }}
                 />
               }
             />
+
             <MyDropdown
               items={items}
               buttonItem={
-                <MoreOutlined style={{ fontSize: "30px", color: "#000000" }} />
+                <MoreOutlined style={{ fontSize: "20px", color: "#000000" }} />
               }
             />
           </div>
           <div className={styles.container_1_box_2}>
-            {!chatsLoading && !chats && !chatsError ? (
+            {invitationsLoading && !invitations && !invitationsError ? (
+              <Spin
+                indicator={
+                  <LoadingOutlined
+                    style={{ color: "#008069", fontSize: "16px" }}
+                  />
+                }
+              />
+            ) : (
+              <></>
+            )}
+            {!invitationsLoading &&
+            invitations &&
+            invitations?.length > 0 &&
+            !invitationsError ? (
+              <div className={styles.invitations}>
+                {invitations?.map((invitation) => (
+                  <div
+                    key={invitation?.id}
+                    className={styles.invitation}
+                    onClick={() => handleInvitationClick(invitation)}
+                  >
+                    <div className={styles.icon}></div>
+                    <p className="text-small">{invitation?.chatName}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <></>
+            )}
+            {!invitationLoading && !invitations && invitationError ? (
+              <div>
+                <p>{invitationError}</p>
+              </div>
+            ) : (
+              <></>
+            )}
+            {chatsLoading && !chats && !chatsError ? (
               <Spin
                 indicator={
                   <LoadingOutlined
@@ -239,142 +363,235 @@ export default function Home() {
             ) : (
               <></>
             )}
+            {!chatsLoading && !chats && chatsError ? (
+              <div>
+                <p>{chatsError}</p>
+              </div>
+            ) : (
+              <></>
+            )}
           </div>
         </div>
         <div className={styles.container_2}>
           <div className={styles.container_2_box_1}>
             {selectedChat ? (
-              <div className={styles.selected_chat}>
+              <div
+                className={styles.selected_chat}
+                onClick={() => setGroupChatDrawerOpen(true)}
+              >
                 <div className={styles.icon}></div>
                 <p className="text-small">{selectedChat?.name}</p>
               </div>
             ) : (
               <></>
             )}
-          </div>
-          <div className={styles.container_2_box_2} ref={myDivRef}>
-            {messageLoading && !messages && !messagesError ? (
-              <Spin
-                indicator={
-                  <LoadingOutlined
-                    style={{ color: "#008069", fontSize: "16px" }}
+            {selectedInvitation ? (
+              <div className={styles.selected_invitation}>
+                <div className={styles.icon}></div>
+                <p className="text-small">{selectedInvitation?.chatName}</p>
+              </div>
+            ) : (
+              <></>
+            )}
+            {selectedChat &&
+            selectedChat?.isGroup &&
+            selectedChat?.userChat?.isAdmin ? (
+              <MyDropdown
+                items={chatItems}
+                buttonItem={
+                  <MoreOutlined
+                    style={{ fontSize: "20px", color: "#000000" }}
                   />
                 }
               />
             ) : (
               <></>
             )}
-            {!messagesLoading && !messages && messagesError ? (
-              <div className={styles.error}>
-                <p className="text-small">{messagesError}</p>
-              </div>
-            ) : (
-              <></>
-            )}
-            {!messagesError ? (
-              allMessages.map((message, index) => {
-                if (index === 0) {
-                  return (
-                    <div
-                      key={message?.id}
-                      className={`${styles.message}  ${
-                        userDetails?.id === message?.senderId
-                          ? styles.message_right
-                          : ""
-                      }`}
-                      ref={firstMessageElementRef}
-                    >
-                      <div className={styles.message_content}>
-                        <div className={styles.message_content_header}>
-                          {userDetails?.id !== message?.userId ? (
-                            <p className="text-extra-small bold">
-                              {message?.senderName}
-                            </p>
-                          ) : (
-                            <p className="text-extra-small bold">You</p>
-                          )}
-                          <p className="text-extra-small">
-                            {new Date(message?.createdAt).toLocaleTimeString()}
-                          </p>
-                        </div>
-                        <div className={styles.message_content_body}>
-                          <p className="text-small ">{message?.content}</p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                } else {
-                  return (
-                    <div
-                      key={message?.id}
-                      className={`${styles.message}  ${
-                        userDetails?.id === message?.senderId
-                          ? styles.message_right
-                          : ""
-                      }`}
-                    >
-                      <div className={styles.message_content}>
-                        <div className={styles.message_content_header}>
-                          {userDetails?.id !== message?.userId ? (
-                            <p className="text-extra-small bold">
-                              {message?.senderName}
-                            </p>
-                          ) : (
-                            <p className="text-extra-small bold">You</p>
-                          )}
-                          <p className="text-extra-small">
-                            {new Date(message?.createdAt).toLocaleTimeString()}
-                          </p>
-                        </div>
-                        <div className={styles.message_content_body}>
-                          <p className="text-small ">{message?.content}</p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-              })
-            ) : (
-              <></>
-            )}
           </div>
-          <div className={styles.container_2_box_3}>
-            <input
-              className={styles.message_input}
-              type="text"
-              placeholder="Type your message..."
-              value={userMessage.content}
-              onChange={(event) =>
-                setUserMessage({ content: event.target.value })
-              }
-            />
-            <div className={styles.send_button}>
-              {messageLoading ? (
+          {selectedChat ? (
+            <div className={styles.container_2_box_2} ref={myDivRef}>
+              {messageLoading && !messages && !messagesError ? (
                 <Spin
                   indicator={
                     <LoadingOutlined
-                      style={{ color: "#54656f", fontSize: "16px" }}
+                      style={{ color: "#008069", fontSize: "16px" }}
                     />
                   }
                 />
               ) : (
-                <SendOutlined
-                  style={{
-                    fontSize: "20px",
-                    color: "#54656f",
-                    borderRadius: "50%",
-                  }}
-                  onClick={handleSendMessage}
-                />
+                <></>
+              )}
+              {!messagesLoading && !messages && messagesError ? (
+                <div className={styles.error}>
+                  <p className="text-small">{messagesError}</p>
+                </div>
+              ) : (
+                <></>
+              )}
+              {!messagesError ? (
+                allMessages.map((message, index) => {
+                  if (index === 0) {
+                    return (
+                      <div
+                        key={message?.id}
+                        className={`${styles.message}  ${
+                          userDetails?.id === message?.senderId
+                            ? styles.message_right
+                            : ""
+                        }`}
+                        ref={firstMessageElementRef}
+                      >
+                        <div className={styles.message_content}>
+                          <div className={styles.message_content_header}>
+                            {userDetails?.id !== message?.userId ? (
+                              <p className="text-extra-small bold">
+                                {message?.senderName}
+                              </p>
+                            ) : (
+                              <p className="text-extra-small bold">You</p>
+                            )}
+                            <p className="text-extra-small">
+                              {new Date(
+                                message?.createdAt
+                              ).toLocaleTimeString()}
+                            </p>
+                          </div>
+                          <div className={styles.message_content_body}>
+                            <p className="text-small ">{message?.content}</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  } else {
+                    return (
+                      <div
+                        key={message?.id}
+                        className={`${styles.message}  ${
+                          userDetails?.id === message?.senderId
+                            ? styles.message_right
+                            : ""
+                        }`}
+                      >
+                        <div className={styles.message_content}>
+                          <div className={styles.message_content_header}>
+                            {userDetails?.id !== message?.userId ? (
+                              <p className="text-extra-small bold">
+                                {message?.senderName}
+                              </p>
+                            ) : (
+                              <p className="text-extra-small bold">You</p>
+                            )}
+                            <p className="text-extra-small">
+                              {new Date(
+                                message?.createdAt
+                              ).toLocaleTimeString()}
+                            </p>
+                          </div>
+                          <div className={styles.message_content_body}>
+                            <p className="text-small ">{message?.content}</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                })
+              ) : (
+                <></>
               )}
             </div>
-          </div>
+          ) : selectedInvitation ? (
+            <div
+              className={`${styles.container_2_box_2} ${styles.container_2_box_2_res}`}
+            >
+              <p className="text-small">
+                You have been invited to join this group
+              </p>
+              <div className={styles.invitation_buttons}>
+                <button
+                  className="btn_secondary"
+                  onClick={() => handleInvitaionButtonClick(false)}
+                >
+                  {invitationLoading ? (
+                    <Spin
+                      indicator={
+                        <LoadingOutlined
+                          style={{ color: "#ffffff", fontSize: "16px" }}
+                        />
+                      }
+                    />
+                  ) : (
+                    "Reject"
+                  )}
+                </button>
+                <button onClick={() => handleInvitaionButtonClick(true)}>
+                  {invitationLoading ? (
+                    <Spin
+                      indicator={
+                        <LoadingOutlined
+                          style={{ color: "#ffffff", fontSize: "16px" }}
+                        />
+                      }
+                    />
+                  ) : (
+                    "Accept"
+                  )}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div></div>
+          )}
+          {selectedChat ? (
+            <div className={styles.container_2_box_3}>
+              <input
+                className={styles.message_input}
+                type="text"
+                placeholder="Type your message..."
+                value={userMessage.content}
+                onChange={(event) =>
+                  setUserMessage({ content: event.target.value })
+                }
+              />
+              <div className={styles.send_button}>
+                {messageLoading ? (
+                  <Spin
+                    indicator={
+                      <LoadingOutlined
+                        style={{ color: "#54656f", fontSize: "16px" }}
+                      />
+                    }
+                  />
+                ) : (
+                  <SendOutlined
+                    style={{
+                      fontSize: "20px",
+                      color: "#54656f",
+                      borderRadius: "50%",
+                    }}
+                    onClick={handleSendMessage}
+                  />
+                )}
+              </div>
+            </div>
+          ) : (
+            <div></div>
+          )}
         </div>
       </div>
       <ProfileDrawer open={profileDrawerOpen} setOpen={setProfileDrawerOpen} />
       <CreateNewGroupDrawer
         open={createNewGroupDrawerOpen}
         setOpen={setCreateNewGroupDrawerOpen}
+      />
+      <AddUsersDrawer
+        open={addUserDrawerOpen}
+        setOpen={setAddUserDrawerOpen}
+        chat={selectedChat}
+      />
+      <GroupChatDrawer
+        open={groupChatDrawerOpen}
+        setOpen={setGroupChatDrawerOpen}
+        chat={selectedChat}
       />
     </>
   );

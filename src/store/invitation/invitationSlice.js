@@ -1,32 +1,31 @@
-import { sendMessage } from "./messageActions";
+import { updateInvitation } from "./invitationActions";
 
 const { createSlice } = require("@reduxjs/toolkit");
 
-const messageSlice = createSlice({
-  name: "message",
+const invitationSlice = createSlice({
+  name: "invitations",
   initialState: {
     loading: false,
     message: null,
     error: null,
   },
   reducers: {
-    resetMessageData: (state) => {
+    resetInvitationData: (state) => {
       state.loading = false;
       state.message = null;
       state.error = null;
     },
   },
   extraReducers: (builder) => {
-    //send message
     builder
-      .addCase(sendMessage.pending, (state) => {
+      .addCase(updateInvitation.pending, (state) => {
         state.loading = true;
       })
-      .addCase(sendMessage.fulfilled, (state, { payload }) => {
+      .addCase(updateInvitation.fulfilled, (state, { payload }) => {
         state.loading = false;
         state.message = payload?.data?.message;
       })
-      .addCase(sendMessage.rejected, (state, error) => {
+      .addCase(updateInvitation.rejected, (state, error) => {
         state.loading = false;
         if (error?.payload) {
           state.error = error?.payload?.data?.message;
@@ -37,6 +36,6 @@ const messageSlice = createSlice({
   },
 });
 
-export default messageSlice.reducer;
+export default invitationSlice.reducer;
 
-export const { resetMessageData } = messageSlice.actions;
+export const { resetInvitationData } = invitationSlice.actions;

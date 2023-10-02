@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import styles from "./Home.module.css";
 import {
@@ -10,15 +10,15 @@ import {
   CloseCircleFilled,
   PlusCircleOutlined,
   UsergroupAddOutlined,
-  CheckCircleFilled,
   UserAddOutlined,
+  PaperClipOutlined,
 } from "@ant-design/icons";
 import { Spin, Tooltip, message } from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import { getUserDetails } from "@/store/user/userActions";
 import ProfileDrawer from "@/components/drawers/profileDrawer/ProfileDrawer";
-import { resetUserData, setUserDetails } from "@/store/user/userSlice";
-import { setToken } from "@/store/auth/authSlice";
+import { setUserDetails } from "@/store/user/userSlice";
+import { resetAuthData, setToken } from "@/store/auth/authSlice";
 import { sendMessage } from "@/store/message/messageActions";
 import { getChatMessages } from "@/store/messages/messagesActions";
 import { signout } from "@/store/auth/authActions";
@@ -26,21 +26,19 @@ import { getAllChats } from "@/store/chats/chatsActions";
 import MyDropdown from "@/components/myDropdown/MyDropdown";
 import CreateNewGroupDrawer from "@/components/drawers/createNewGroupDrawer/createNewGroupDrawer";
 import { getInvitations } from "@/store/invitations/invitationsActions";
-import { updateInvitation } from "@/store/invitation/invitationActions";
-import { resetInvitationData } from "@/store/invitation/invitationSlice";
 import { resetMessageData } from "@/store/message/messageSlice";
 import AddUsersDrawer from "@/components/drawers/addUserDrawer/AddUsersDrawer";
 import GroupChatDrawer from "@/components/drawers/groupChatDrawer/GroupChatDrawer";
+import Chat from "@/components/chat/Chat";
+import useSocketHook from "@/customHooks/useSocketHook";
+import Invitation from "@/components/invitation/Invitation";
+import { resetMessagesData } from "@/store/messages/messagesSlice";
 
 export default function Home() {
   const router = useRouter();
   const dispatch = useDispatch();
 
-  const {
-    loading,
-    userDetails,
-    message: authMessage,
-  } = useSelector((state) => state.user);
+  const socket = useSocketHook();
 
   const {
     loading: invitationsLoading,
@@ -49,22 +47,10 @@ export default function Home() {
   } = useSelector((state) => state.invitations);
 
   const {
-    loading: invitationLoading,
-    message: invitationMessage,
-    error: invitationError,
-  } = useSelector((state) => state.invitations);
-
-  const {
     loading: chatsLoading,
     chats,
     error: chatsError,
   } = useSelector((state) => state.chats);
-
-  const {
-    loading: messagesLoading,
-    messages,
-    error: messagesError,
-  } = useSelector((state) => state.messages);
 
   const { loading: messageLoading, error: messageError } = useSelector(
     (state) => state.message
@@ -79,30 +65,15 @@ export default function Home() {
   const [groupChatDrawerOpen, setGroupChatDrawerOpen] = useState(false);
   const [selectedChat, setSelectedChat] = useState(null);
   const [selectedInvitation, setSelectedInvitation] = useState(null);
-  const [userMessage, setUserMessage] = useState({ content: "" });
-  const [allMessages, setAllMessages] = useState([]);
+  const [userMessage, setUserMessage] = useState({
+    content: "",
+    type: "text",
+    file: null,
+  });
   const [pageNumber, setPageNumber] = useState(1);
   const [messageApi, contextHolder] = message.useMessage();
 
-  const myDivRef = useRef(null);
-  const observer = useRef(null);
-
-  const firstMessageElementRef = useCallback(
-    (node) => {
-      if (loading) return;
-      if (observer.current) observer.current.disconnect();
-      observer.current = new IntersectionObserver((entries) => {
-        if (
-          entries[0].isIntersecting &&
-          messages?.currentPage < messages?.lastPage
-        ) {
-          setPageNumber((prevPageNumber) => prevPageNumber + 1);
-        }
-      });
-      if (node) observer.current.observe(node);
-    },
-    [loading, messages]
-  );
+  const fileInputRef = useRef(null);
 
   const handleLogout = () => {
     dispatch(signout()).then((response) => {
@@ -157,40 +128,47 @@ export default function Home() {
     setSelectedInvitation(invitation);
   };
 
-  const handleInvitaionButtonClick = (status) => {
-    dispatch(
-      updateInvitation({
-        status,
-        invitationId: selectedInvitation?.id,
-      })
-    ).then((response) => {
-      dispatch(resetInvitationData());
-      if (response?.payload?.data?.status) {
-        setSelectedInvitation(null);
-        dispatch(getInvitations()).then((response) => {
-          if (response?.payload?.data?.status) {
-            dispatch(getAllChats());
-          }
-        });
-      }
-    });
+  const handleChatClick = (chat) => {
+    setSelectedChat(chat);
+    setSelectedInvitation(null);
+    setPageNumber(1);
+    dispatch(resetMessagesData());
   };
 
-  const handleChatClick = (chat) => {
-    setSelectedInvitation(null);
-    setSelectedChat(chat);
-    setPageNumber(1);
-    dispatch(getChatMessages({ chatId: chat?.id, pageNumber: 1 }));
+  const handleFileInputChange = (event) => {
+    console.log(event.target.files[0]);
+    const file = event.target.files[0];
+    if (file) {
+      setUserMessage((prevState) => ({
+        ...prevState,
+        content: file.name,
+        type: getFileType(file),
+        file: file,
+      }));
+    }
+  };
+
+  const getFileType = (file) => {
+    if (file.type.startsWith("image/")) return "image";
+    if (file.type === "application/pdf") return "pdf";
+    return "document";
   };
 
   const handleSendMessage = () => {
-    dispatch(sendMessage({ chatId: selectedChat?.id, userMessage })).then(
-      () => {
-        setUserMessage({ content: "" });
-        setPageNumber(1);
-        dispatch(getChatMessages({ chatId: selectedChat?.id, pageNumber: 1 }));
-      }
-    );
+    let messagePayload = {
+      chatId: selectedChat?.id,
+      userMessage,
+    };
+    if (userMessage.type !== "text" && userMessage.file) {
+      const formData = new FormData();
+      formData.append("file", userMessage.file);
+      messagePayload.fileData = formData;
+    }
+    dispatch(sendMessage(messagePayload)).then(() => {
+      setUserMessage({ content: "", type: "text", file: null });
+      setPageNumber(1);
+      dispatch(getChatMessages({ chatId: selectedChat?.id, pageNumber: 1 }));
+    });
   };
 
   useEffect(() => {
@@ -214,61 +192,26 @@ export default function Home() {
 
   useEffect(() => {
     dispatch(getInvitations());
-  }, []);
-
-  useEffect(() => {
     dispatch(getAllChats());
   }, []);
 
   useEffect(() => {
-    if (selectedChat && pageNumber > 1) {
-      dispatch(getChatMessages({ chatId: selectedChat?.id, pageNumber }));
+    if (selectedChat) {
+      socket.emit("joinChat", selectedChat?.id);
+      dispatch(getChatMessages({ chatId: selectedChat?.id, pageNumber: 1 }));
     }
-  }, [pageNumber, selectedChat]);
+  }, [selectedChat]);
 
   useEffect(() => {
-    if (messages && messages?.currentPage === 1) {
-      setAllMessages(messages?.data);
-    } else if (messages && messages?.currentPage > 1) {
-      setAllMessages((prevState) => [...messages?.data, ...prevState]);
-    }
-  }, [messages]);
-
-  useEffect(() => {
-    if (myDivRef.current && messages?.currentPage === 1) {
-      myDivRef.current.scrollTop = myDivRef.current.scrollHeight;
-    }
-  }, [allMessages]);
-
-  useEffect(() => {
-    if (
-      authMessage ||
-      messageError ||
-      authError ||
-      invitationMessage ||
-      invitationError
-    ) {
+    if (messageError || authError) {
       messageApi.open({
-        content: messageError
-          ? messageError
-          : authError
-          ? authError
-          : invitationMessage
-          ? invitationMessage
-          : invitationError
-          ? invitationError
-          : authMessage,
-        icon: invitationMessage ? (
-          <CheckCircleFilled style={{ color: "#008069" }} />
-        ) : (
-          <CloseCircleFilled style={{ color: "red" }} />
-        ),
+        content: messageError ? messageError : authError,
+        icon: <CloseCircleFilled style={{ color: "red" }} />,
       });
+      dispatch(resetAuthData());
       dispatch(resetMessageData());
-      dispatch(resetInvitationData());
-      dispatch(resetUserData());
     }
-  }, [messageError]);
+  }, [, messageError, authError]);
 
   return (
     <>
@@ -329,9 +272,9 @@ export default function Home() {
             ) : (
               <></>
             )}
-            {!invitationLoading && !invitations && invitationError ? (
+            {!invitationsLoading && !invitations && invitationsError ? (
               <div>
-                <p>{invitationError}</p>
+                <p>{invitationsError}</p>
               </div>
             ) : (
               <></>
@@ -408,148 +351,53 @@ export default function Home() {
               <></>
             )}
           </div>
-          {selectedChat ? (
-            <div className={styles.container_2_box_2} ref={myDivRef}>
-              {messageLoading && !messages && !messagesError ? (
-                <Spin
-                  indicator={
-                    <LoadingOutlined
-                      style={{ color: "#008069", fontSize: "16px" }}
-                    />
-                  }
-                />
-              ) : (
-                <></>
-              )}
-              {!messagesLoading && !messages && messagesError ? (
-                <div className={styles.error}>
-                  <p className="text-small">{messagesError}</p>
-                </div>
-              ) : (
-                <></>
-              )}
-              {!messagesError ? (
-                allMessages.map((message, index) => {
-                  if (index === 0) {
-                    return (
-                      <div
-                        key={message?.id}
-                        className={`${styles.message}  ${
-                          userDetails?.id === message?.senderId
-                            ? styles.message_right
-                            : ""
-                        }`}
-                        ref={firstMessageElementRef}
-                      >
-                        <div className={styles.message_content}>
-                          <div className={styles.message_content_header}>
-                            {userDetails?.id !== message?.userId ? (
-                              <p className="text-extra-small bold">
-                                {message?.senderName}
-                              </p>
-                            ) : (
-                              <p className="text-extra-small bold">You</p>
-                            )}
-                            <p className="text-extra-small">
-                              {new Date(
-                                message?.createdAt
-                              ).toLocaleTimeString()}
-                            </p>
-                          </div>
-                          <div className={styles.message_content_body}>
-                            <p className="text-small ">{message?.content}</p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  } else {
-                    return (
-                      <div
-                        key={message?.id}
-                        className={`${styles.message}  ${
-                          userDetails?.id === message?.senderId
-                            ? styles.message_right
-                            : ""
-                        }`}
-                      >
-                        <div className={styles.message_content}>
-                          <div className={styles.message_content_header}>
-                            {userDetails?.id !== message?.userId ? (
-                              <p className="text-extra-small bold">
-                                {message?.senderName}
-                              </p>
-                            ) : (
-                              <p className="text-extra-small bold">You</p>
-                            )}
-                            <p className="text-extra-small">
-                              {new Date(
-                                message?.createdAt
-                              ).toLocaleTimeString()}
-                            </p>
-                          </div>
-                          <div className={styles.message_content_body}>
-                            <p className="text-small ">{message?.content}</p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }
-                })
-              ) : (
-                <></>
-              )}
-            </div>
-          ) : selectedInvitation ? (
-            <div
-              className={`${styles.container_2_box_2} ${styles.container_2_box_2_res}`}
-            >
-              <p className="text-small">
-                You have been invited to join this group
-              </p>
-              <div className={styles.invitation_buttons}>
-                <button
-                  className="btn_secondary"
-                  onClick={() => handleInvitaionButtonClick(false)}
-                >
-                  {invitationLoading ? (
-                    <Spin
-                      indicator={
-                        <LoadingOutlined
-                          style={{ color: "#ffffff", fontSize: "16px" }}
-                        />
-                      }
-                    />
-                  ) : (
-                    "Reject"
-                  )}
-                </button>
-                <button onClick={() => handleInvitaionButtonClick(true)}>
-                  {invitationLoading ? (
-                    <Spin
-                      indicator={
-                        <LoadingOutlined
-                          style={{ color: "#ffffff", fontSize: "16px" }}
-                        />
-                      }
-                    />
-                  ) : (
-                    "Accept"
-                  )}
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div></div>
-          )}
+          <div className={styles.container_2_box_2}>
+            {selectedChat ? (
+              <Chat
+                chat={selectedChat}
+                pageNumber={pageNumber}
+                setPageNumber={setPageNumber}
+              />
+            ) : (
+              <></>
+            )}
+            {selectedInvitation ? (
+              <Invitation
+                invitation={selectedInvitation}
+                setInvitation={setSelectedInvitation}
+              />
+            ) : (
+              <></>
+            )}
+          </div>
           {selectedChat ? (
             <div className={styles.container_2_box_3}>
+              <input
+                type="file"
+                style={{ display: "none" }}
+                ref={fileInputRef}
+                onChange={handleFileInputChange}
+              />
+              <div className={styles.paper_clip_outlined}>
+                <PaperClipOutlined
+                  style={{
+                    fontSize: "20px",
+                    color: "#54656f",
+                    borderRadius: "50%",
+                  }}
+                  onClick={() => fileInputRef.current.click()}
+                />
+              </div>
               <input
                 className={styles.message_input}
                 type="text"
                 placeholder="Type your message..."
                 value={userMessage.content}
                 onChange={(event) =>
-                  setUserMessage({ content: event.target.value })
+                  setUserMessage((prevState) => ({
+                    ...prevState,
+                    content: event.target.value,
+                  }))
                 }
               />
               <div className={styles.send_button}>

@@ -1,8 +1,7 @@
 import { Drawer, Image, Spin, message } from "antd";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import styles from "./ProfileDrawer.module.css";
 import {
-  UserOutlined,
   ArrowLeftOutlined,
   EditOutlined,
   CheckCircleFilled,
@@ -11,7 +10,10 @@ import {
 } from "@ant-design/icons";
 import { useDispatch, useSelector } from "react-redux";
 import { resetUserData } from "@/store/user/userSlice";
-import { editUserDetails } from "@/store/user/userActions";
+import {
+  editUserDetails,
+  uploadProfilePicture,
+} from "@/store/user/userActions";
 
 const ProfileDrawer = ({ open, setOpen }) => {
   const dispatch = useDispatch();
@@ -33,7 +35,10 @@ const ProfileDrawer = ({ open, setOpen }) => {
     email: "",
     mobile: "",
   });
+  const [profilePic, setProfilePic] = useState(null);
   const [messageApi, contextHolder] = message.useMessage();
+
+  const fileInputRef = useRef(null);
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
@@ -47,6 +52,25 @@ const ProfileDrawer = ({ open, setOpen }) => {
         "userDetails",
         JSON.stringify(response?.payload?.data?.data?.userDetails)
       );
+    });
+  };
+
+  const handleFileInputChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setProfilePic(file);
+    }
+  };
+
+  const handleUploadProfilePicture = () => {
+    const formData = new FormData();
+    formData.append("file", profilePic);
+    dispatch(uploadProfilePicture(formData)).then((response) => {
+      localStorage.setItem(
+        "userDetails",
+        JSON.stringify(response?.payload?.data?.data?.userDetails)
+      );
+      setProfilePic(null);
     });
   };
 
@@ -106,13 +130,29 @@ const ProfileDrawer = ({ open, setOpen }) => {
               />
             </div>
             <div className={styles.container_1_box_2}>
-              <button className="btn-secondary">
-                {userDetails?.profilePic
+              <input
+                type="file"
+                style={{ display: "none" }}
+                ref={fileInputRef}
+                onChange={handleFileInputChange}
+              />
+              <button
+                className="btn_secondary"
+                onClick={
+                  profilePic
+                    ? handleUploadProfilePicture
+                    : () => fileInputRef.current.click()
+                }
+              >
+                {profilePic
+                  ? "Upload"
+                  : userDetails?.profilePic
                   ? "Change profile pic"
                   : "Add profile pic"}
               </button>
             </div>
           </div>
+          <img src={profilePic} alt="" />
           <div className={styles.container_2}>
             <p className="text-small">Your name</p>
             <div className={styles.container_2_box_1}>

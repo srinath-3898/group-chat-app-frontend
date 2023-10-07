@@ -36,3 +36,21 @@ export const editUserDetails = createAsyncThunk(
     }
   }
 );
+
+export const uploadProfilePicture = createAsyncThunk(
+  "user/uploadProfilePicture",
+  async (profilePic, { rejectWithValue }) => {
+    try {
+      api.defaults.headers.common[
+        "Authorization"
+      ] = `Bearer ${localStorage.getItem("token")}`;
+      const response = await api.post("/user/upload-profile-pic", profilePic);
+      return response;
+    } catch (error) {
+      if (!error.response) {
+        throw error;
+      }
+      return rejectWithValue(error.response);
+    }
+  }
+);

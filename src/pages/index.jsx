@@ -12,8 +12,9 @@ import {
   UsergroupAddOutlined,
   UserAddOutlined,
   PaperClipOutlined,
+  MessageOutlined,
 } from "@ant-design/icons";
-import { Spin, Tooltip, message } from "antd";
+import { Spin, message } from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import { getUserDetails } from "@/store/user/userActions";
 import ProfileDrawer from "@/components/drawers/profileDrawer/ProfileDrawer";
@@ -39,6 +40,8 @@ export default function Home() {
   const dispatch = useDispatch();
 
   const socket = useSocketHook();
+
+  const { userDetails } = useSelector((state) => state.user);
 
   const {
     loading: invitationsLoading,
@@ -92,7 +95,19 @@ export default function Home() {
           className={styles.item}
           onClick={() => setCreateNewGroupDrawerOpen(true)}
         >
-          <p className="text-small">Create new group</p>
+          <p className="text-small">New Chat</p>
+          <MessageOutlined style={{ fontSize: "20px" }} />
+        </div>
+      ),
+    },
+    {
+      key: "2",
+      label: (
+        <div
+          className={styles.item}
+          onClick={() => setCreateNewGroupDrawerOpen(true)}
+        >
+          <p className="text-small">New group</p>
           <UsergroupAddOutlined style={{ fontSize: "20px" }} />
         </div>
       ),
@@ -132,7 +147,6 @@ export default function Home() {
     setSelectedChat(chat);
     setSelectedInvitation(null);
     setPageNumber(1);
-    dispatch(resetMessagesData());
   };
 
   const handleFileInputChange = (event) => {
@@ -197,6 +211,7 @@ export default function Home() {
 
   useEffect(() => {
     if (selectedChat) {
+      dispatch(resetMessagesData());
       socket.emit("joinChat", selectedChat?.id);
       dispatch(getChatMessages({ chatId: selectedChat?.id, pageNumber: 1 }));
     }
@@ -219,25 +234,34 @@ export default function Home() {
       <div className={styles.container}>
         <div className={styles.container_1}>
           <div className={styles.container_1_box_1}>
-            <Tooltip title="Profile">
-              <UserOutlined
-                style={{ fontSize: "20px", color: "#000000" }}
+            {userDetails?.profilePic ? (
+              <img
+                src={userDetails?.profilePic}
+                className={styles.profile_pic}
+                alt=""
                 onClick={() => setProfileDrawerOpen(true)}
               />
-            </Tooltip>
-            <MyDropdown
-              items={createItems}
-              buttonItem={
-                <PlusCircleOutlined
-                  style={{ fontSize: "20px", color: "#000000" }}
-                />
-              }
-            />
+            ) : (
+              <UserOutlined
+                style={{ fontSize: "25px", color: "#000000" }}
+                onClick={() => setProfileDrawerOpen(true)}
+              />
+            )}
+            <div>
+              <MyDropdown
+                items={createItems}
+                buttonItem={
+                  <PlusCircleOutlined
+                    style={{ fontSize: "25px", color: "#000000" }}
+                  />
+                }
+              />
+            </div>
 
             <MyDropdown
               items={items}
               buttonItem={
-                <MoreOutlined style={{ fontSize: "20px", color: "#000000" }} />
+                <MoreOutlined style={{ fontSize: "25px", color: "#000000" }} />
               }
             />
           </div>
@@ -399,6 +423,13 @@ export default function Home() {
                     content: event.target.value,
                   }))
                 }
+                onKeyDown={(event) => {
+                  console.log("hello");
+                  if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
               />
               <div className={styles.send_button}>
                 {messageLoading ? (

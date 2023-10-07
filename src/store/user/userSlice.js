@@ -1,4 +1,8 @@
-import { editUserDetails, getUserDetails } from "./userActions";
+import {
+  editUserDetails,
+  getUserDetails,
+  uploadProfilePicture,
+} from "./userActions";
 
 const { createSlice } = require("@reduxjs/toolkit");
 
@@ -50,6 +54,25 @@ const userSlice = createSlice({
         state.message = payload?.data?.message;
       })
       .addCase(editUserDetails.rejected, (state, error) => {
+        state.loading = false;
+        if (error?.payload) {
+          state.error = error?.payload?.data?.message;
+        } else {
+          state.error = error?.error?.message;
+        }
+      });
+
+    //upload profile picture
+    builder
+      .addCase(uploadProfilePicture.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(uploadProfilePicture.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        state.userDetails = payload?.data?.data?.userDetails;
+        state.message = payload?.data?.message;
+      })
+      .addCase(uploadProfilePicture.rejected, (state, error) => {
         state.loading = false;
         if (error?.payload) {
           state.error = error?.payload?.data?.message;
